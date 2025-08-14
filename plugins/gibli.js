@@ -1,20 +1,21 @@
-// plugins/imgg-ghibli.js
+require('dotenv').config(); // Load .env variables
 const { cmd } = require('../command');
 const axios = require('axios');
 
-const HF_API_KEY = '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'; // Hugging Face API Key
-const HF_MODEL = 'prompthero/openjourney'; // Ghibli-style Stable Diffusion model
+const HF_API_KEY = process.env.HF_API_KEY; // Read API key from .env
+const HF_MODEL = 'prompthero/openjourney'; // Ghibli-style AI model
 
 cmd({
     pattern: 'imgg',
     fromMe: false,
-    desc: 'Generate a Ghibli-style AI image from your text.',
+    desc: 'Generate a Ghibli-style AI image from text prompt.',
     category: 'tools',
     filename: __filename
 }, async (conn, mek, m, { args, reply }) => {
     try {
-        const prompt = args.join(' ') || 'Studio Ghibli style fantasy landscape, cinematic lighting, anime art';
+        if (!HF_API_KEY) return reply('❌ Hugging Face API Key not found. Please set it in .env file.');
         
+        const prompt = args.join(' ') || 'Studio Ghibli style fantasy landscape, cinematic lighting, anime art';
         await reply(`🎨 Generating your Ghibli-style image...\nPrompt: *${prompt}*`);
 
         const response = await axios.post(
@@ -40,6 +41,6 @@ cmd({
 
     } catch (error) {
         console.error(error);
-        reply('❌ Error generating image. Try again later.');
+        reply('❌ Failed to generate image. Try again later.');
     }
 });
