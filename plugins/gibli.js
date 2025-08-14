@@ -10,25 +10,27 @@ cmd({
   filename: __filename
 }, async (conn, mek, m, { args, reply }) => {
   try {
-    const prompt = args.join(' ') || 'Ghibli style landscape 🌸';
+    const prompt = args.join(' ') || 'Ghibli style fantasy landscape, Studio Ghibli art, anime, cinematic lighting';
 
-    await reply('🎨 Generating your Ghibli-style image... This may take a few seconds.');
+    await reply('🎨 Generating your Ghibli-style image... Please wait.');
 
-    // Free API endpoint: Replit DALL·E Mini
-    const response = await axios.post('https://api.replit.com/v1/dalle-mini/generate', {
-      prompt: prompt
-    });
+    // Use Lexica API (No API key needed)
+    const res = await axios.get(`https://lexica.art/api/v1/search?q=${encodeURIComponent(prompt)}`);
 
-    const imageUrl = response.data.image_url;
-    if (!imageUrl) return reply('❌ Failed to generate image.');
+    if (!res.data.images || res.data.images.length === 0) {
+      return reply('❌ No image found for your prompt.');
+    }
+
+    // Pick a random image from results
+    const imageUrl = res.data.images[Math.floor(Math.random() * res.data.images.length)].src;
 
     await conn.sendMessage(mek.key.remoteJid, {
       image: { url: imageUrl },
-      caption: `✨ Here is your Ghibli-style image for:\n"${prompt}"`
+      caption: `✨ Ghibli-style image for:\n"${prompt}"`
     }, { quoted: mek });
 
   } catch (err) {
-    console.error('AI Image Generate Error:', err);
-    reply('❌ Error generating image. Try again later.');
+    console.error(err);
+    reply('❌ Failed to generate image. Try again later.');
   }
 });
