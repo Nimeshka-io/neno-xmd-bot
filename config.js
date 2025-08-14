@@ -7,7 +7,7 @@ function convertToBool(text, fault = "true") {
 }
 
 module.exports = {
-  SESSION_ID: process.env.SESSION_ID || "p31VDYaL#Koh9eUy8HMFhNLpacLQKxTYsygtFOXwEWH6kHTpyqqM",
+  SESSION_ID: process.env.SESSION_ID || "ODA2zTSb#WV2VAvUYL5roBibDtTJzrcszBZziVPuWTOQ9qF_z8F8",
   OWNER_NUM: process.env.OWNER_NUM || "94721584279",
   PREFIX: process.env.PREFIX || ".",
   AUTO_READ_STATUS: process.env.AUTO_READ_STATUS || "true",
@@ -16,9 +16,9 @@ module.exports = {
   AUTO_STATUS_LIKE: process.env.AUTO_STATUS_LIKE || "true", 
   AUTO_RECORDING: convertToBool(process.env.AUTO_RECORDING || "false"), 
   ANTI_DELETE: convertToBool(process.env.ANTI_DELETE || "true"),
-  AUTO_VOICE: process.env.AUTO_VOICE || "true",
-  AUTO_STICKER: process.env.AUTO_STICKER || "true",
-  AUTO_REPLY: process.env.AUTO_REPLY || "true",
+  AUTO_VOICE: process.env.AUTO_VOICE || "false",
+  AUTO_STICKER: process.env.AUTO_STICKER || "false",
+  AUTO_REPLY: process.env.AUTO_REPLY || "false",
   OMDB_API_KEY: process.env.OMDB_API_KEY || "76cb7f39", // omdbapi.com
   ALIVE_IMG: process.env.ALIVE_IMG || "https://files.catbox.moe/ew4vew.jpg",
   AUTO_REACT: convertToBool(process.env.AUTO_REACT || "true"),
