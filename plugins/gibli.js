@@ -1,41 +1,28 @@
 const { cmd } = require('../command');
 const axios = require('axios');
-const config = require('../config');
-
-const HF_API_KEY = config.HF_API_KEY;
 
 cmd({
     pattern: 'imgg',
     fromMe: false,
-    desc: 'Generate a Ghibli-style AI image from text prompt.',
+    desc: 'Generate a free anime-style image without API key',
     category: 'tools',
     filename: __filename
 }, async (conn, mek, m, { args, reply }) => {
     try {
-        if (!HF_API_KEY) return reply('❌ Hugging Face API Key not found in config.');
+        const prompt = args.join(' ') || 'anime girl, fantasy, cinematic lighting';
+        await reply(`🎨 Generating your free anime-style image...\nPrompt: *${prompt}*`);
 
-        const prompt = args.join(' ') || 'Studio Ghibli style fantasy landscape, cinematic lighting, anime art';
-        await reply(`🎨 Generating your Ghibli-style image...\nPrompt: *${prompt}*`);
+        // Free endpoint that generates random anime-style images
+        const imageUrl = `https://thisanimedoesnotexist.ai/api?random=${Math.floor(Math.random()*10000)}`;
 
-        const response = await axios.post(
-            `https://api-inference.huggingface.co/models/prompthero/openjourney`,
-            { inputs: prompt },
-            {
-                headers: {
-                    'Authorization': `Bearer ${HF_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                responseType: 'arraybuffer'
-            }
-        );
+        // Download the image
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data, 'binary');
 
-        if (response.status !== 200) {
-            return reply(`❌ Error: ${response.statusText}`);
-        }
-
+        // Send image to user
         await conn.sendMessage(mek.key.remoteJid, {
-            image: response.data,
-            caption: `✨ *Studio Ghibli Style Image* ✨\nPrompt: ${prompt}`
+            image: buffer,
+            caption: `✨ *Free Anime-style Image* ✨\nPrompt: ${prompt}`
         }, { quoted: mek });
 
     } catch (error) {
