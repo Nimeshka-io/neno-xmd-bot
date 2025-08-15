@@ -22,7 +22,6 @@ module.exports = {
   OMDB_API_KEY: process.env.OMDB_API_KEY || "76cb7f39", // omdbapi.com
   ALIVE_IMG: process.env.ALIVE_IMG || "https://files.catbox.moe/ew4vew.jpg",
   AUTO_REACT: convertToBool(process.env.AUTO_REACT || "true"), 
-  HF_API_KEY: "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"
 
 
 
