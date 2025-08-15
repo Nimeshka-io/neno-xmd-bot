@@ -1,9 +1,8 @@
-require('dotenv').config(); // Load .env variables
 const { cmd } = require('../command');
 const axios = require('axios');
+const config = require('../config');
 
-const HF_API_KEY = process.env.HF_API_KEY; // Read API key from .env
-const HF_MODEL = 'prompthero/openjourney'; // Ghibli-style AI model
+const HF_API_KEY = config.HF_API_KEY;
 
 cmd({
     pattern: 'imgg',
@@ -13,13 +12,13 @@ cmd({
     filename: __filename
 }, async (conn, mek, m, { args, reply }) => {
     try {
-        if (!HF_API_KEY) return reply('❌ Hugging Face API Key not found. Please set it in .env file.');
-        
+        if (!HF_API_KEY) return reply('❌ Hugging Face API Key not found in config.');
+
         const prompt = args.join(' ') || 'Studio Ghibli style fantasy landscape, cinematic lighting, anime art';
         await reply(`🎨 Generating your Ghibli-style image...\nPrompt: *${prompt}*`);
 
         const response = await axios.post(
-            `https://api-inference.huggingface.co/models/${HF_MODEL}`,
+            `https://api-inference.huggingface.co/models/prompthero/openjourney`,
             { inputs: prompt },
             {
                 headers: {
