@@ -2,9 +2,9 @@ const { cmd } = require("../command");
 
 cmd(
   {
-    pattern: "vv",
+    pattern: "vvv",
     react: "👀",
-    desc: "Reply to a view-once image or video to resend it",
+    desc: "Reply to a view-once or normal image/video to resend it",
     category: "fun",
     filename: __filename,
     fromMe: false,
@@ -14,16 +14,17 @@ cmd(
       const from = mek.key.remoteJid;
 
       // Must reply to a message
-      if (!m.quoted) return reply("❌ Reply to a view-once image or video with `.vv`!");
+      if (!m.quoted) return reply("❌ Reply to an image or video with `.vv`!");
 
       const quotedMsg = m.quoted.message;
 
-      // Check if it's a view-once image or video
       let type = null;
-      if (quotedMsg?.imageMessage?.viewOnce) type = "image";
-      else if (quotedMsg?.videoMessage?.viewOnce) type = "video";
 
-      if (!type) return reply("❌ This is not a view-once image or video!");
+      // Check if it's image or video (view-once or normal)
+      if (quotedMsg?.imageMessage) type = "image";
+      else if (quotedMsg?.videoMessage) type = "video";
+
+      if (!type) return reply("❌ This is not an image or video!");
 
       // Download the media
       const buffer = await malvin.downloadMediaMessage(m.quoted);
@@ -33,15 +34,15 @@ cmd(
         from,
         {
           [type]: buffer,
-          caption: `👀 Look! I saved your view-once ${type}! 🌸🩵✨`,
+          caption: `👀 Look! I saved your ${type}! 🌸🩵✨`,
           mimetype: type === "video" ? "video/mp4" : undefined,
         },
         { quoted: mek }
       );
 
     } catch (e) {
-      console.error("❌ Error in .vv view-once plugin:", e);
-      reply("❌ Failed to resend the view-once media!");
+      console.error("❌ Error in .vv plugin:", e);
+      reply("❌ Failed to resend the media!");
     }
   }
 );
