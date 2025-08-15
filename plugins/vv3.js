@@ -2,9 +2,9 @@ const { cmd } = require("../command");
 
 cmd(
   {
-    pattern: "vvv",
+    pattern: "vv",
     react: "👀",
-    desc: "Reply to a view-once or normal image/video to resend it",
+    desc: "Reply to a view-once image/video to resend it (getdp style)",
     category: "fun",
     filename: __filename,
     fromMe: false,
@@ -13,36 +13,56 @@ cmd(
     try {
       const from = mek.key.remoteJid;
 
-      // Must reply to a message
-      if (!m.quoted) return reply("❌ Reply to an image or video with `.vv`!");
+      // Must reply to something
+      if (!m.quoted || !m.quoted.message) {
+        return reply("🍁 *Please reply to a view-once (⭕) image or video with `.vv`!*");
+      }
 
-      const quotedMsg = m.quoted.message;
+      const q = m.quoted.message;
 
-      let type = null;
+      // Detect type (image or video)
+      const isImage = !!q.imageMessage;
+      const isVideo = !!q.videoMessage;
+      if (!isImage && !isVideo) {
+        return reply("❌ *This reply is not an image or video!*");
+      }
 
-      // Check if it's image or video (view-once or normal)
-      if (quotedMsg?.imageMessage) type = "image";
-      else if (quotedMsg?.videoMessage) type = "video";
+      // View-once flag detection
+      const isVO =
+        q?.imageMessage?.viewOnce === true ||
+        q?.videoMessage?.viewOnce === true ||
+        (m.quoted?.viewOnce === true);
 
-      if (!type) return reply("❌ This is not an image or video!");
+      // Download media
+      let buffer;
+      try {
+        buffer = await malvin.downloadMediaMessage(m.quoted);
+      } catch (err) {
+        console.error("vv download error:", err);
+        return reply("❌ *Failed to download the media!*");
+      }
+      if (!buffer) {
+        return reply("❌ *Media buffer is empty!*");
+      }
 
-      // Download the media
-      const buffer = await malvin.downloadMediaMessage(m.quoted);
+      // Captions
+      const capVO = "👀 *View-Once message recovered!* Now you can see it again 🌸✨";
+      const capNormal = "👀 Here’s the media you sent, sent back to you 🌸✨";
+      const caption = (m.quoted?.message?.caption && m.quoted.message.caption.trim().length)
+        ? m.quoted.message.caption
+        : (isVO ? capVO : capNormal);
 
-      // Send it back with a cute caption
-      await malvin.sendMessage(
-        from,
-        {
-          [type]: buffer,
-          caption: `👀 Look! I saved your ${type}! 🌸🩵✨`,
-          mimetype: type === "video" ? "video/mp4" : undefined,
-        },
-        { quoted: mek }
-      );
+      // Prepare output
+      const out = isImage
+        ? { image: buffer, caption, mimetype: q.mimetype || "image/jpeg" }
+        : { video: buffer, caption, mimetype: q.mimetype || "video/mp4" };
+
+      // Send it back
+      await malvin.sendMessage(from, out, { quoted: mek });
 
     } catch (e) {
-      console.error("❌ Error in .vv plugin:", e);
-      reply("❌ Failed to resend the media!");
+      console.error("❌ .vv error:", e);
+      reply("❌ *An error occurred while processing `.vv` — please try again later!*");
     }
   }
 );
