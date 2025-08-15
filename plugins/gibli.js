@@ -1,32 +1,20 @@
-const { cmd } = require('../command');
-const axios = require('axios');
+const { conn } = require('../connection'); // your bot connection
 
-cmd({
-    pattern: 'imgg',
-    fromMe: false,
-    desc: 'Generate a free anime-style image without API key',
-    category: 'tools',
-    filename: __filename
-}, async (conn, mek, m, { args, reply }) => {
+conn.ev.on('messages.delete', async (m) => {
     try {
-        const prompt = args.join(' ') || 'anime girl, fantasy, cinematic lighting';
-        await reply(`🎨 Generating your free anime-style image...\nPrompt: *${prompt}*`);
+        // m contains the deleted message(s)
+        for (const msg of m) {
+            // Ignore bot's own messages
+            if (msg.key.fromMe) continue;
 
-        // Free endpoint that generates random anime-style images
-        const imageUrl = `https://thisanimedoesnotexist.ai/api?random=${Math.floor(Math.random()*10000)}`;
+            const from = msg.key.remoteJid;
+            const deletedMsg = msg.message?.conversation || msg.message?.extendedTextMessage?.text || 'Unknown content';
 
-        // Download the image
-        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const buffer = Buffer.from(response.data, 'binary');
-
-        // Send image to user
-        await conn.sendMessage(mek.key.remoteJid, {
-            image: buffer,
-            caption: `✨ *Free Anime-style Image* ✨\nPrompt: ${prompt}`
-        }, { quoted: mek });
-
-    } catch (error) {
-        console.error(error);
-        reply('❌ Failed to generate image. Try again later.');
+            await conn.sendMessage(from, {
+                text: `⚠️ A user deleted a message!\nDeleted content: ${deletedMsg}`
+            });
+        }
+    } catch (err) {
+        console.error('Error detecting deleted message:', err);
     }
 });
