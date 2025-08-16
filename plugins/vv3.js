@@ -13,56 +13,68 @@ cmd(
     try {
       const from = mek.key.remoteJid;
 
-      // Must reply to something
       if (!m.quoted || !m.quoted.message) {
-        return reply("🍁 *Please reply to a view-once (⭕) image or video with `.vv`!*");
+        return await reply("🍁 *Please reply to a view-once (⭕) image or video with `.vv`!*"); 
       }
 
-      const q = m.quoted.message;
+      // unwrap view-once for multiple protocol shapes
+      let q = m.quoted.message;
+      if (q.viewOnceMessageV2) {
+        q = q.viewOnceMessageV2.message || q.viewOnceMessageV2;
+      } else if (q.viewOnceMessage && q.viewOnceMessage.message) {
+        q = q.viewOnceMessage.message;
+      }
 
-      // Detect type (image or video)
+      // Detect type
       const isImage = !!q.imageMessage;
       const isVideo = !!q.videoMessage;
       if (!isImage && !isVideo) {
-        return reply("❌ *This reply is not an image or video!*");
+        return await reply("❌ *This reply is not an image or video!*"); 
       }
 
-      // View-once flag detection
-      const isVO =
-        q?.imageMessage?.viewOnce === true ||
-        q?.videoMessage?.viewOnce === true ||
-        (m.quoted?.viewOnce === true);
-
-      // Download media
+      // Download media (try both calling styles)
       let buffer;
       try {
-        buffer = await malvin.downloadMediaMessage(m.quoted);
+        // some bots use conn.downloadMediaMessage({ message: q })
+        if (typeof malvin.downloadMediaMessage === "function") {
+          try {
+            buffer = await malvin.downloadMediaMessage({ message: q });
+          } catch (_) {
+            // fallback: some versions accept the message directly
+            buffer = await malvin.downloadMediaMessage(q).catch(() => null);
+          }
+        }
+        // as a last fallback, try downloadContentFromMessage (Baileys internals)
+        if (!buffer && malvin.downloadContentFromMessage) {
+          const stream = await malvin.downloadContentFromMessage(q, isImage ? "image" : "video");
+          const chunks = [];
+          for await (const chunk of stream) chunks.push(chunk);
+          buffer = Buffer.concat(chunks);
+        }
       } catch (err) {
-        console.error("vv download error:", err);
-        return reply("❌ *Failed to download the media!*");
+        console.error("vv download error (all attempts):", err);
       }
+
       if (!buffer) {
-        return reply("❌ *Media buffer is empty!*");
+        return await reply("❌ *Failed to download the media!*"); 
       }
 
       // Captions
       const capVO = "👀 *View-Once message recovered!* Now you can see it again 🌸✨";
-      const capNormal = "👀 Here’s the media you sent, sent back to you 🌸✨";
-      const caption = (m.quoted?.message?.caption && m.quoted.message.caption.trim().length)
-        ? m.quoted.message.caption
-        : (isVO ? capVO : capNormal);
+      const capNormal = q.imageMessage?.caption || q.videoMessage?.caption || "👀 Here’s the media you sent, sent back to you 🌸✨";
+      const caption = q.imageMessage?.caption || q.videoMessage?.caption || capVO;
 
       // Prepare output
       const out = isImage
-        ? { image: buffer, caption, mimetype: q.mimetype || "image/jpeg" }
-        : { video: buffer, caption, mimetype: q.mimetype || "video/mp4" };
+        ? { image: buffer, caption, mimetype: q.imageMessage?.mimetype || "image/jpeg" }
+        : { video: buffer, caption, mimetype: q.videoMessage?.mimetype || "video/mp4" };
 
       // Send it back
       await malvin.sendMessage(from, out, { quoted: mek });
 
     } catch (e) {
       console.error("❌ .vv error:", e);
-      reply("❌ *An error occurred while processing `.vv` — please try again later!*");
+      try { await reply("❌ *An error occurred while processing `.vv` — check logs!*"); } catch {}
     }
   }
 );
